@@ -1,0 +1,55 @@
+---
+title: "Emissions: Energy Star Metric"
+date: "2/12/2019"
+output: html_document
+---
+
+```{r, include=FALSE, message=FALSE}
+library(data.table)
+library(ggplot2)
+library(readxl)
+library(DT)
+```
+
+
+```{r, echo=FALSE, warning=FALSE}
+bdgs_ov_50k <- read_excel("02 - LL84 Raw Data.xlsx", sheet = "cleaned2016over50k")
+setDT(bdgs_ov_50k)
+bdgs_ov_50k[`ENERGY STAR Score` %in% "Not Available", `ENERGY STAR Score` := NA ]
+bdgs_ov_50k[, `ENERGY STAR Score`:= as.numeric(`ENERGY STAR Score`)]
+
+bdgs_ov_50k[, norm_site := `Site EUI (kBtu/ft²)`/`DOF Gross Floor Area`]
+bdgs_ov_50k[, norm_source := `Source EUI (kBtu/ft²)`/`DOF Gross Floor Area`]
+bdgs_sub <- bdgs_ov_50k[!OccuGroup %in% c(NA, "N/A", 0), ]
+```
+
+
+##### The plot below shows the spread of energy star ratings. The black line is the median for the group, and the box indicates the value for the 25th and 75th percentile. The points beyond the lines for the business group indicate where outliers fall. 
+
+Note that not all of these groups have the same number of buidlings, so it's not super useful to compare groups (ie while 'residential' looks very similar to storage, there are 8791 residential buildings and only 376 storage). The main takeaway is what proportion of the number of buildings in each group will fall above/below cutoff scores. 
+```{r, echo=FALSE, warning=FALSE}
+ggplot(bdgs_sub, aes(x = OccuGroup, y = `ENERGY STAR Score`, fill = OccuGroup)) + geom_boxplot(show.legend = FALSE) + coord_flip() + theme_classic() + 
+  ylab("Energy Star Score") + xlab("Occupancy Group") 
+bdgs_sub[, N := .N, by = "OccuGroup"]
+# DT::datatable(bdgs_sub[, .N, by = "OccuGroup"][order(N, decreasing = TRUE)])
+```
+
+
+
+#### These plots show the distribution (the number of buildings that fall into a particular rating) of the Energy Star rating across groups.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(bdgs_sub[N>200, ], aes(x=`ENERGY STAR Score`)) + geom_histogram() + facet_wrap(~OccuGroup) + 
+  theme_bw() + xlab("Energy Star Score")
+
+ggplot(bdgs_sub[N<201, ], aes(x=`ENERGY STAR Score`)) + geom_histogram() + facet_wrap(~OccuGroup) + 
+  theme_bw() + xlab("Energy Star Score")
+```
+
+
+#### These plots show the relationship between source energy, site energy, and Energy Star ratings. 
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(bdgs_sub, aes(x = norm_source, y = `ENERGY STAR Score`)) + geom_point() + theme_bw() + facet_wrap(~OccuGroup) + xlab("Source Energy/Floor Area")
+ggplot(bdgs_sub, aes(x = norm_site, y = `ENERGY STAR Score`)) + geom_point() + theme_bw() + facet_wrap(~OccuGroup) + xlab("Site Energy/Floor Area")
+```
+
