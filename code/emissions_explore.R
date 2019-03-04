@@ -4,15 +4,21 @@ library(readxl)
 library(stringr)
 library(tidyr)
 
-# let's use their data and explore 
-
+# this uses the old occupancy groups - the new model includes more granular groups 
 # let's look at buildings that are > 50K sq.ft
-lg_bdg <- fread("Energy_and_Water_Data_Disclosure_for_Local_Law_84_2017__Data_for_Calendar_Year_2016_.csv")
-nrow(lg_bdg)
-# lg_bdg <- read_excel("Copy of 2013_data_disclosure.xls", na = c("", "N/A"))
-setDT(lg_bdg)
+bdgs <- read_excel("data/02 - LL84 Raw Data.xlsx", sheet = "cleaned2016over50k")
+setDT(bdgs)
 
-ghg <- read_excel("GHGI Model for CC.xlsx", sheet = "Scrubbed Data & Calculations"); setDT(ghg)
+# can we look at ghg/sq ft 
+bdgs[, ghgsqft := `Total GHG Emissions (Metric Tons CO2e)`/`Largest Property Use Type - Gross Floor Area (ft²)`]
+
+# let's look at the residential buildings 
+res <- bdgs[OccuGroup %in% "Residential", ]
+ggplot(res, aes(x=ghgsqft)) + geom_histogram()
+quantile(res$ghgsqft, .99, na.rm = TRUE)
+res[ghgsqft > .015, ]
+res[which.max(ghgsqft), ]
+
 
 # how many NAs 
 nafun <- function(x){
