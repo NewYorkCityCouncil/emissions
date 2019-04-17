@@ -19,7 +19,6 @@ quantile(res$ghgsqft, .99, na.rm = TRUE)
 res[ghgsqft > .015, ]
 res[which.max(ghgsqft), ]
 
-
 # how many NAs 
 nafun <- function(x){
   sum(is.na(x))
